@@ -737,7 +737,7 @@ xrStatus setDetector(DETECTION ProcType,int tunerid,int ddcid)
 }
 
 //PSD_ProcessFrame(0x00026700): range 1 to 40000.
-xrStatus setFrame(unsigned int frame,int tunerid,int ddcid)
+xrStatus setFramesPreprocessed(unsigned int frame,int tunerid,int ddcid)
 {
     if (!axilite_init_done)
         return xrDeviceNotOpenErr;
