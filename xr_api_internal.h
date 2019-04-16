@@ -19,6 +19,7 @@
 #include <signal.h>
 #include <mutex>
 #include "xr_api.h"
+#include "globas.h"
 
 namespace xrapi_internal{
 
@@ -194,7 +195,56 @@ extern const unsigned int Err_Scale_Limit_arr[21];
     return false; \
 } /* end */
 
+typedef enum _xrStatus{
+    // Configuration Errors
+    xrRFGainRangeErr                = -113,
+    xrInvalidModeErr                = -112,
+    xrReferenceLevelErr             = -111,
+    xrInvalidSweepTimeErr           = -107,
+    xrBandwidthErr                  = -106,
+    xrInvalidGainErr                = -105,
+    xrAttenuationErr                = -104,
+    xrWorkModeErr                   = -103,
+    xrRecvModeErr                   = -102,
+    xrRfAttenModeErr                = -101,
+    xrItuDataTypeErr                = -100,
+    xrWindowsTypeErr                = -99,
+    xrFFTLengthErr                  = -98,
+    xrDETECTIONErr                  = -97,
+    xrLeverTypeErr                  = -96,
+    xrTunerFreqErr                  = -95,
+    xrSquelchThresholdErr           = -94,
+    xrPSDFrameErr                   = -93,
+    xrPSDDecimationErr              = -92,
+    xrLevelTimeErr                  = -91,
+    xrDemodTypeErr                  = -90,
+    xrBFOErr                        = -89,
+    xrITUFsErr                      = -88,
+    xrAudioFilterErr                = -87,
+    xrVolumeErr                     = -86,
+    xrStartScanErr                  = -85,
+    xrContinueScanErr               = -84,
+    xrPSDTruncBitErr                = -83,
+    xrDGCModeErr                    = -82,
+    xrMGCGainErr                    = -81,
+    xrAGCSpeedErr                   = -80,
 
+
+    // General Errors
+
+    xrDDCidErr                   = -6,
+    xrTuneridErr                 = -5,
+    xrDeviceNotConfigureErr      = -4,
+    xrRestErr                    = -3,
+    xrDeviceMmapErr              = -2,
+    xrDeviceNotOpenErr           = -1,
+
+    // No Error
+    xrNoError                    = 0,
+
+    // Warnings/Messages
+
+}xrStatus;
 
 extern xrStatus cmd_send(int content[2]);
 extern xrStatus reset();
@@ -209,7 +259,7 @@ extern xrStatus setITUBandwidth(BandWidth bandwidth, int tunerid, int ddcid);
 extern xrStatus setWindowsType(WINDOWS_TYPE window, int tunerid, int ddcid);
 extern xrStatus setFFTLength(FFT_LENGTH length, int tunerid, int ddcid);
 extern xrStatus setDetector(DETECTION ProcType, int tunerid, int ddcid);
-extern xrStatus setFrame(unsigned int frame, int tunerid, int ddcid);
+extern xrStatus setFramesPreprocessed(unsigned int frame, int tunerid, int ddcid);
 extern xrStatus setDecimation(unsigned int dec, int tunerid, int ddcid);
 extern xrStatus setLevelType(LevelType LevType, int tunerid, int ddcid);
 extern xrStatus setLevelTime(unsigned int LevTime, bool LevAuto, int tunerid, int ddcid);

@@ -28,7 +28,8 @@ SOURCES += \
 
 HEADERS += \
     xr_api_internal.h \
-    xr_api.h
+    xr_api.h \
+    globas.h
 
 unix {
     target.path = /usr/lib

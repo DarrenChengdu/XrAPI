@@ -2,17 +2,6 @@
 #include "xr_api_internal.h"
 using namespace xrapi_internal;
 
-#define RX_NUM_CHAN 1
-#define RX_NUM_ITU_CHAN 8
-#define RX_TUNER_STEP 1000
-#define XR_MIN_FREQ            30.0e6
-#define XR_MAX_FREQ            3000.0e6
-#define XR_MAX_SPAN            (XR_MAX_FREQ - XR_MIN_FREQ)
-#define XR_MIN_RF_GAIN         0
-#define XR_MAX_RF_GAIN         60
-#define XR_MIN_ITU_GAIN         0
-#define XR_MAX_ITU_GAIN         60
-
 struct XrSettings
 {
     XrSettings() {}
@@ -31,7 +20,7 @@ XR_API size_t get_rx_num_channels()
     return RX_NUM_CHAN;
 }
 
-XR_API size_t get_rx_analy_num_channels()
+XR_API size_t get_rx_num_itu_channels()
 {
     return RX_NUM_ITU_CHAN;
 }
@@ -40,9 +29,9 @@ XR_API size_t get_rx_analy_num_channels()
 XR_API xrStatus set_rx_freq (Hz freq, size_t chan)
 {
     Hz tunerFreq = round(freq/RX_TUNER_STEP) * RX_TUNER_STEP;
-    Hz ituFreq = freq - tunerFreq;
+    Hz offset = freq - tunerFreq;
     xrStatus ret1 = setTunerFreq(tunerFreq, chan);
-    xrStatus ret2 = setBBDDCFreq(ituFreq, chan, RX_NUM_CHAN-1);
+    xrStatus ret2 = setBBDDCFreq(offset, chan, BB_DDC_ID);
 
     if (ret1 == xrNoError && ret2 == xrNoError) {
         settings.rx_freq[chan] = freq;
@@ -83,8 +72,16 @@ XR_API void get_rx_freq_range (Hz &min, Hz &max, size_t chan)
 // Gain
 XR_API xrStatus set_rx_rf_gain (double gain, size_t chan)
 {
+    if (gain < XR_MIN_RF_GAIN || gain > XR_MAX_RF_GAIN) {
+        return xrRFGainRangeErr;
+    }
+
+    if (chan < 0 || chan > RX_NUM_CHAN-1) {
+        return xrTuneridErr;
+    }
+
     if (!settings.rf_agc_enabled) {
-        //           return setRFAtten("manual", XR_MAX_RF_GAIN-gain, chan);
+        return setRFAtten(RF_ATTEN_MANUAL, XR_MAX_RF_GAIN-gain, chan);
     } else {
         return xrDeviceNotConfigureErr;
     }
