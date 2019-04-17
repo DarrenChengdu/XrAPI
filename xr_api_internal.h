@@ -90,7 +90,7 @@ enum ITU_Fs {
     ITU_Fs_64K        = 64000,
     ITU_Fs_128K       = 128000,
     ITU_Fs_256K       = 256000
-    //    ITU_Fs_512K       = 512000
+//    ITU_Fs_512K       = 512000
 };
 
 
@@ -174,15 +174,15 @@ enum DGC_MODE{
 
 
 static float bwarr[BANDWIDTH_MAX]={
-    200000, 192000, 162500, 150000, 144000, 125000, 120000, 112500,
-    100000, 96000,  81250,  75000,  72000,  62500,  60000,  56250,
-    50000,  48000,  40625,  37500,  36000,  31250,  30000,  28125,
-    25000,  24000,  20312,  187500, 18000,  15625,  15000,  14062,
-    12500,  12000,  10156,  9375,   9000,   7817,   7500,   7031,
-    6250,   6000,   5078,   4687,   4500,   3906,   3750,   3515,
-    3000,   2700,   2400,   2100,   1500,   1000,   600,    300,
-    150,    100
-};
+                        200000, 192000, 162500, 150000, 144000, 125000, 120000, 112500,
+                        100000, 96000,  81250,  75000,  72000,  62500,  60000,  56250,
+                        50000,  48000,  40625,  37500,  36000,  31250,  30000,  28125,
+                        25000,  24000,  20312,  187500, 18000,  15625,  15000,  14062,
+                        12500,  12000,  10156,  9375,   9000,   7817,   7500,   7031,
+                        6250,   6000,   5078,   4687,   4500,   3906,   3750,   3515,
+                        3000,   2700,   2400,   2100,   1500,   1000,   600,    300,
+                        150,    100
+                       };
 
 extern const unsigned int Loop_e_arr[21];
 extern const unsigned int Loop_m_arr[21];
@@ -190,10 +190,47 @@ extern const unsigned int Err_Scale_Limit_arr[21];
 
 //---------------------------------------------------------
 
-#define STATUS_CHECK(ret) \
-    if(ret < 0) { \
-    return false; \
-} /* end */
+
+enum PSBandWidth {
+    PSBW_5MHz=0,    PSBW_2p5MHz=1,PSBW_1MHz=2,  PSBW_500KHz=3,
+    PSBW_250KMHz=4, PSBW_200KHz=5,PSBW_100KHz=6,PSBW_50KHz=7
+};
+
+enum PSPSD_Resolution {
+    Resolution_100KHz=0,Resolution_50KHz=1,Resolution_25KHz=2,Resolution_12p5KHz=3,
+    Resolution_6p25KHz=4,Resolution_3p125KHz=5,Resolution_2p5KHz=6,Resolution_1p25KHz=7,
+    Resolution_625Hz=8,Resolution_500Hz=9,Resolution_250Hz=10,Resolution_125Hz=11,
+};
+
+typedef struct _FSearchParameter {
+    unsigned char       SearchMode;
+    short               squenchValue;
+    unsigned int        bwIndex;
+    unsigned short      demodIndex;
+    short               bfoValue;
+    unsigned char       gainIndex;
+    short               mgcValue;
+    unsigned char       agcSpeed;
+    unsigned short      lingeringTime;
+    unsigned short      keepTime;
+}FSearchParameter;
+
+typedef struct _MSearchParameter {
+    unsigned char       recoverIndex;
+    short               squenchValue;
+    unsigned int        bwIndex;
+    unsigned short      demodIndex;
+    short               bfoValue;
+    unsigned char       gainIndex;
+    short               mgcValue;
+    unsigned char       agcSpeed;
+    unsigned short      lingeringTime;
+    unsigned short      keepTime;
+    unsigned long long  frequnecy;
+}MSearchParameter;
+
+
+//---------------------------------------------------------
 
 typedef enum _xrStatus{
     // Configuration Errors
@@ -229,6 +266,13 @@ typedef enum _xrStatus{
     xrMGCGainErr                    = -81,
     xrAGCSpeedErr                   = -80,
 
+    xrPSBandwidthErr                = -79,
+
+    xrFSearchParameterErr           = -78,
+    xrMSearchParameterErr           = -77,
+    xrPSScanParameterErr            = -76,
+
+    xrPSScanResolutionErr            = -76,
 
     // General Errors
 
@@ -246,6 +290,7 @@ typedef enum _xrStatus{
 
 }xrStatus;
 
+
 extern xrStatus cmd_send(int content[2]);
 extern xrStatus reset();
 extern xrStatus setWorkMode(WORK_MODE workmode, int tunerid);
@@ -256,10 +301,13 @@ extern xrStatus setBBDDCFreq(double offset, int tunerid, int ddcid);
 extern xrStatus setPSDDCFreq(double offset, int tunerid, int ddcid);
 extern xrStatus setITUDDCFreq(double offset, int tunerid, int ddcid);
 extern xrStatus setITUBandwidth(BandWidth bandwidth, int tunerid, int ddcid);
+
+extern xrStatus setPSBandwidth(PSBandWidth bandwidth, int tunerid, int ddcid);
+
 extern xrStatus setWindowsType(WINDOWS_TYPE window, int tunerid, int ddcid);
 extern xrStatus setFFTLength(FFT_LENGTH length, int tunerid, int ddcid);
 extern xrStatus setDetector(DETECTION ProcType, int tunerid, int ddcid);
-extern xrStatus setFramesPreprocessed(unsigned int frame, int tunerid, int ddcid);
+extern xrStatus setFrame(unsigned int frame, int tunerid, int ddcid);
 extern xrStatus setDecimation(unsigned int dec, int tunerid, int ddcid);
 extern xrStatus setLevelType(LevelType LevType, int tunerid, int ddcid);
 extern xrStatus setLevelTime(unsigned int LevTime, bool LevAuto, int tunerid, int ddcid);
@@ -273,8 +321,15 @@ extern xrStatus setSquelch(bool Squelch_en,int squelch_threshold,int tunerid, in
 extern xrStatus setDemod(DEMOD_TYPE demod_type, int BFO, int tunerid, int ddcid);
 extern xrStatus setAudioFilter(bool aduiofilter_en, int tunerid, int ddcid);
 extern xrStatus setAudioVolume(unsigned int volume,int tunerid,int ddcid);
-extern xrStatus initAXILITE();
-extern xrStatus closeAXILITE();
+extern xrStatus openDevice();
+extern xrStatus closeDevice();
+
+////////////////////////////////////////////////
+
+extern xrStatus setFSearch(double start_freq, double stop_freq, double step_freq,
+                           FSearchParameter parameter);
+extern xrStatus setMSearch(MSearchParameter *parameter, int channel_number);
+extern xrStatus setPSScan(double start_freq, double stop_freq, PSPSD_Resolution resolution);
 
 
 ////////////////////////////////////////////////
@@ -287,3 +342,4 @@ extern xrStatus SetTruncBit(unsigned int trunc_bit, int tunerid, int ddcid);
 extern xrStatus setRfBw(int bw, int tunerid, int ddcid);
 }
 #endif // XRAPI_INTERNAL_H
+

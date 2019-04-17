@@ -5,11 +5,14 @@ namespace xrapi_internal{
 //int cmd_send(int content[2]);
 bool axilite_init_done = false;
 int axilite_fd;
+int cmd_fd;
+bool cmd_fd_init_done = false;
 unsigned int axilite_size;
 void *map_addr;
 volatile unsigned int *cmd_addr;
 ITU_Fs itu_fs = ITU_Fs_256K;
-BandWidth bw;
+BandWidth bw = BW_200kHz;
+
 
 std::mutex instrMutex;
 
@@ -65,7 +68,23 @@ bool get_agc_time(AGC_SPEED aspeed,unsigned int *Loop_e,unsigned int *Loop_m,uns
     return true;
 }
 
-xrStatus initAXILITE()
+int sendblockcmd(int *data,unsigned int size)
+{
+    //    read(fd_blockirq,&flag, sizeof(flag));
+    int rc = write(cmd_fd,data,size);
+    if(rc != size)
+    {
+        printf("send blockcmd failed %d\n",rc);
+        return -1;
+    }
+    else
+    {
+        printf("send blockcmd success %d\n",rc);
+        return 0;
+    }
+}
+
+xrStatus openDevice()
 {
     Tuner_channel = TUNER_NUMBER;
     itudd_channel = ITUDDC_CHANNEL_NUMBER;
@@ -86,6 +105,18 @@ xrStatus initAXILITE()
         return xrDeviceNotOpenErr;
     }
 
+    cmd_fd = open("/dev/xillybus_channel_2",O_WRONLY);
+    if(cmd_fd < 0)
+    {
+        fprintf(stderr, "open axi lite device error");
+        cmd_fd_init_done = false;
+        return xrDeviceNotOpenErr;
+    }
+    else
+    {
+        cmd_fd_init_done = true;
+    }
+
     axilite_size = len;
 
     map_addr = mmap( NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, axilite_fd, 0);
@@ -103,7 +134,7 @@ xrStatus initAXILITE()
     return xrNoError;
 }
 
-xrStatus closeAXILITE()
+xrStatus closeDevice()
 {
     if (axilite_init_done) {
         //axidma_destroy(paxidma_dev);
@@ -114,13 +145,21 @@ xrStatus closeAXILITE()
         return xrNoError;
     }
 
+    if(cmd_fd_init_done)
+    {
+        close(cmd_fd);
+
+        cmd_fd_init_done = false;
+    }
+
+
     fprintf(stderr, "axilite_dev has not been initialized.\n");
 }
 
 xrStatus cmd_send(int content[2])
 {
 
-    if (!axilite_init_done)
+    if (!cmd_fd_init_done)
         return xrDeviceNotOpenErr;
 
     bool flag = false;
@@ -542,6 +581,35 @@ xrStatus setITUBandwidth(BandWidth bandwidth, int tunerid, int ddcid)
     return xrDeviceNotConfigureErr;
 }
 
+extern xrStatus setPSBandwidth(PSBandWidth bandwidth, int tunerid, int ddcid)
+{
+    if (!axilite_init_done)
+        return xrDeviceNotOpenErr;
+    else if(tunerid >= Tuner_channel || tunerid < 0)
+        return xrTuneridErr;
+    else if(ddcid >= itudd_channel || ddcid < 0)
+        return xrDDCidErr;
+    else if(!(bandwidth >= PSBW_5MHz && bandwidth <= PSBW_50KHz))
+        return xrPSBandwidthErr;
+
+    int bw = (int)bandwidth;
+
+    int word[2];
+    word[0] = bw;
+    word[1] = 0x00006100;
+    tunerid = tunerid << 24;
+    ddcid = ddcid << 16;
+    word[1]= tunerid | word[1];
+    word[1]= ddcid | word [1];
+
+    if (cmd_send(word) == 0) {
+        printf("setITUBandwidth: %d!!\n", bw);
+        return xrNoError;
+    }
+
+    return xrDeviceNotConfigureErr;
+}
+
 //ITU_Demod(0x00026200): 0--Amp; 1--Phase
 
 xrStatus setThirdDataType(ITU_DataType_3rd datatype, int tunerid, int ddcid)
@@ -736,7 +804,7 @@ xrStatus setDetector(DETECTION ProcType,int tunerid,int ddcid)
 }
 
 //PSD_ProcessFrame(0x00026700): range 1 to 40000.
-xrStatus setFramesPreprocessed(unsigned int frame,int tunerid,int ddcid)
+xrStatus setFrame(unsigned int frame,int tunerid,int ddcid)
 {
     if (!axilite_init_done)
         return xrDeviceNotOpenErr;
@@ -1230,6 +1298,102 @@ xrStatus SetTruncBit(unsigned int trunc_bit, int tunerid, int ddcid)
 }
 
 
+xrStatus setFSearch(double start_freq, double stop_freq, double step_freq, FSearchParameter parameter)
+{
+    if(!cmd_fd_init_done)
+        return xrDeviceNotOpenErr;
+    else if(start_freq < 0 || stop_freq < 0 || step_freq < 0 ||
+            start_freq > stop_freq)
+        return xrFSearchParameterErr;
+
+    int *cmd_data;
+    int size;
+
+    cmd_data = (int *)malloc(size);
+
+    //-----------FSearch--------------------------------
+
+
+
+
+
+    //-----------FSearch--------------------------------
+
+    free(cmd_data);
+
+    int rc = sendblockcmd(cmd_data,size);
+
+    if(rc != size)
+    {
+        return xrDeviceNotConfigureErr;
+    }
+    return xrNoError;
+}
+
+xrStatus setMSearch(MSearchParameter *parameter, int channel_number)
+{
+    if(!cmd_fd_init_done)
+        return xrDeviceNotOpenErr;
+    else if(channel_number < 0)
+        return xrMSearchParameterErr;
+
+    int *cmd_data;
+    int size;
+
+    cmd_data = (int *)malloc(size);
+
+    //-----------MSearch--------------------------------
+
+
+
+
+
+    //-----------MSearch--------------------------------
+    free(cmd_data);
+
+    int rc = sendblockcmd(cmd_data,size);
+
+    if(rc != size)
+    {
+        return xrDeviceNotConfigureErr;
+    }
+    return xrNoError;
+}
+
+xrStatus setPSScan(double start_freq, double stop_freq, PSPSD_Resolution resolution)
+{
+    if(!cmd_fd_init_done)
+        return xrDeviceNotOpenErr;
+    else if(start_freq < 0 || stop_freq < 0 ||
+            start_freq > stop_freq)
+        return xrPSScanParameterErr;
+    else if(!(resolution >= Resolution_100KHz && resolution <= Resolution_125Hz))
+        return xrPSScanResolutionErr;
+
+    int *cmd_data;
+    int size;
+
+    cmd_data = (int *)malloc(size);
+
+    //-----------PSScan--------------------------------
+
+
+
+
+
+    //-----------PSScan--------------------------------
+    free(cmd_data);
+
+    int rc = sendblockcmd(cmd_data,size);
+
+    if(rc != size)
+    {
+        return xrDeviceNotConfigureErr;
+    }
+    return xrNoError;
+}
+
+
 template<typename T>
 bool array_cmp(T *a1, T *a2, int len)
 {
@@ -1246,4 +1410,5 @@ bool array_cmp(T *a1, T *a2, int len)
 }
 
 } //using namespace
+
 
