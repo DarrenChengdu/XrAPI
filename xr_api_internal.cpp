@@ -13,7 +13,6 @@ volatile unsigned int *cmd_addr;
 ITU_Fs itu_fs = ITU_Fs_256K;
 BandWidth bw = BW_200kHz;
 
-
 std::mutex instrMutex;
 
 int Tuner_channel;

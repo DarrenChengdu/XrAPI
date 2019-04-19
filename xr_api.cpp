@@ -5,13 +5,36 @@ using namespace xrapi_internal;
 struct XrSettings
 {
     XrSettings() {}
-    Hz rx_freq[RX_NUM_CHAN];
+
+    // Frequency
+    Hz rx_freq[RX_NUM_CHAN];    
     Hz rx_itu_freq[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
-    bool rf_agc_enabled;
-    bool itu_agc_enabled;
-    double rf_gain[RX_NUM_CHAN];
-    double itu_gain[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
-    std::string rx_gain_profile;
+
+    // Gain
+    double rx_gain[RX_NUM_CHAN];
+    double rx_itu_gain[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
+    std::string rx_gain_profile[RX_NUM_CHAN];
+    bool rx_agc_enabled[RX_NUM_CHAN];
+    bool rx_itu_agc_enabled[RX_NUM_CHAN];
+
+    // Rate
+    Hz rx_bw[RX_NUM_CHAN];
+    double rx_rate[RX_NUM_CHAN];
+    Hz rx_itu_bw[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
+    double rx_itu_rate[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
+
+    // Frontend
+    Hz rx_if_bw[RX_NUM_CHAN];
+
+    // Demodulation
+    std::string rx_itu_demod_type[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
+    double rx_itu_demod_param[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
+
+    // Audio
+    bool rx_itu_filter_enabled[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
+    int rx_itu_volume[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
+    bool rx_itu_squelch_enabled[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
+    double rx_itu_squelch_threshold[RX_NUM_ITU_CHAN][RX_NUM_CHAN];
 
 } settings;
 
@@ -70,7 +93,7 @@ XR_API void get_rx_freq_range (Hz &min, Hz &max, size_t chan)
 }
 
 // Gain
-XR_API xrStatus set_rx_rf_gain (double gain, size_t chan)
+XR_API xrStatus set_rx_gain (double gain, size_t chan)
 {
     if (gain < XR_MIN_RF_GAIN || gain > XR_MAX_RF_GAIN) {
         return xrRFGainRangeErr;
@@ -81,19 +104,19 @@ XR_API xrStatus set_rx_rf_gain (double gain, size_t chan)
     }
 
     if (!settings.rf_agc_enabled) {
-        return setRFAtten(RF_ATTEN_MANUAL, XR_MAX_RF_GAIN-gain, chan);
+        return setRFAtten(RF_ATTEN_MANUAL, XR_MAX_RF_GAIN - gain, chan);
     } else {
         return xrDeviceNotConfigureErr;
     }
 }
 
-XR_API xrStatus get_rx_rf_gain (double &gain, size_t chan)
+XR_API xrStatus get_rx_gain (double &gain, size_t chan)
 {
     if (chan < 0 || chan > RX_NUM_CHAN-1) {
         return xrTuneridErr;
     }
 
-    gain = settings.rf_gain[chan];
+    gain = settings.rx_gain[chan];
     return xrNoError;
 }
 
@@ -130,11 +153,11 @@ XR_API xrStatus get_rx_itu_gain (double &gain, size_t subchan, size_t chan)
         return xrDDCidErr;
     }
 
-    gain = settings.itu_gain[subchan][chan];
+    gain = settings.rx_itu_gain[subchan][chan];
     return xrNoError;
 }
 
-XR_API void get_rx_rf_gain_range (double &min, double &max)
+XR_API void get_rx_gain_range (double &min, double &max)
 {
     min = XR_MIN_RF_GAIN;
     max = XR_MAX_RF_GAIN;
@@ -172,7 +195,7 @@ XR_API xrStatus get_rx_gain_profile (std::string &profile, const size_t chan)
     return xrNoError;
 }
 
-XR_API xrStatus set_rx_rf_agc (bool enable, size_t chan)
+XR_API xrStatus set_rx_agc (bool enable, size_t chan)
 {
     if (chan < 0 || chan > RX_NUM_CHAN-1) {
         return xrTuneridErr;
@@ -183,10 +206,96 @@ XR_API xrStatus set_rx_rf_agc (bool enable, size_t chan)
     return xrNoError;
 }
 
-//// Rate
-//XR_API xrStatus 	set_rx_rate (Hz rate, size_t chan=ALL_CHANS);
-//XR_API Hz        	get_rx_rate (size_t chan=0);
+// Rate
+XR_API xrStatus 	set_rx_rate (Hz rate, size_t chan)
+{
 
-//// RF frontend
-//XR_API xrStatus 	set_rx_bandwidth (Hz bandwidth, size_t chan=0);  // Set the RX bandwidth on the frontend
-//XR_API Hz        	get_rx_bandwidth (size_t chan=0);
+    return xrNoError;
+}
+
+XR_API Hz        	get_rx_rate (size_t chan)
+{
+    return xrNoError;
+}
+
+XR_API xrStatus 	set_rx_bandwidth (Hz bw, size_t chan)
+{
+    return xrNoError;
+}
+
+XR_API Hz        	get_rx_bandwidth (size_t chan)
+{
+
+}
+
+XR_API xrStatus 	set_rx_itu_rate (Hz rate, size_t subchan, size_t chan)
+{
+    return xrNoError;
+}
+
+XR_API Hz        	get_rx_itu_rate (size_t subchan, size_t chan)
+{
+    return xrNoError;
+}
+
+XR_API xrStatus 	set_rx_itu_bandwidth (Hz bw, size_t subchan, size_t chan)
+{
+
+}
+XR_API Hz        	get_rx_itu_bandwidth (size_t subchan, size_t chan)
+{
+
+}
+
+// Audio
+XR_API xrStatus 	set_rx_itu_squelch (bool enabled, double threshold, size_t subchan, size_t chan)
+{
+
+}
+
+XR_API xrStatus 	get_rx_itu_squelch (bool &enabled, double &threshold, size_t subchan, size_t chan)
+{
+
+}
+
+XR_API xrStatus 	set_rx_itu_demod (DEMOD_TYPE type, double param, size_t subchan, size_t chan)
+{
+
+}
+
+XR_API xrStatus 	get_rx_itu_demod (DEMOD_TYPE &type, double &param, size_t subchan, size_t chan)
+{
+
+}
+
+XR_API xrStatus     set_rx_itu_filter_enabled(bool enabled, size_t subchan, size_t chan)
+{
+
+}
+
+XR_API bool         get_rx_itu_filter_enabled(size_t subchan, size_t chan)
+{
+
+}
+
+XR_API xrStatus     set_rx_itu_volume(int volume, size_t subchan, size_t chan)
+{
+
+}
+
+XR_API int          get_rx_itu_volume(size_t subchan, size_t chan)
+{
+
+}
+
+// RF frontend
+XR_API xrStatus 	set_rx_if_bandwidth (Hz bw, size_t chan)
+{
+
+}
+
+XR_API Hz        	get_rx_if_bandwidth (size_t chan)
+{
+
+}
+
