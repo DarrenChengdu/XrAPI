@@ -204,10 +204,10 @@ enum PSPSD_Resolution {
 
 typedef struct _FSearchParameter {
     unsigned char       SearchMode;
-    short               squenchValue;
+    short               squelch_threshold;
     unsigned int        bwIndex;
     unsigned short      demodIndex;
-    short               bfoValue;
+    short               bfo;
     unsigned char       gainIndex;
     short               mgcValue;
     unsigned char       agcSpeed;
@@ -217,10 +217,10 @@ typedef struct _FSearchParameter {
 
 typedef struct _MSearchParameter {
     unsigned char       recoverIndex;
-    short               squenchValue;
+    short               squelch_threshold;
     unsigned int        bwIndex;
     unsigned short      demodIndex;
-    short               bfoValue;
+    short               bfo;
     unsigned char       gainIndex;
     short               mgcValue;
     unsigned char       agcSpeed;
@@ -327,10 +327,9 @@ extern xrStatus closeDevice();
 ////////////////////////////////////////////////
 
 extern xrStatus setFSearch(double start_freq, double stop_freq, double step_freq,
-                           FSearchParameter parameter);
-extern xrStatus setMSearch(MSearchParameter *parameter, int channel_number);
-extern xrStatus setPSScan(double start_freq, double stop_freq, PSPSD_Resolution resolution);
-
+                           FSearchParameter parameter， int subchan， int chan);
+extern xrStatus setMSearch(MSearchParameter *parameter, int channel_number=0);
+extern xrStatus setPScan(double start_freq, double stop_freq, PSPSD_Resolution resolution);
 
 ////////////////////////////////////////////////
 

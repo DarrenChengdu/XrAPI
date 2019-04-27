@@ -1359,7 +1359,7 @@ xrStatus setMSearch(MSearchParameter *parameter, int channel_number)
     return xrNoError;
 }
 
-xrStatus setPSScan(double start_freq, double stop_freq, PSPSD_Resolution resolution)
+xrStatus setPScan(double start_freq, double stop_freq, PSPSD_Resolution resolution)
 {
     if(!cmd_fd_init_done)
         return xrDeviceNotOpenErr;
